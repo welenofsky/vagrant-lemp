@@ -1,0 +1,8 @@
+[local]
+localhost ansible_user=vagrant ansible_port=2222 ansible_host=127.0.0.1
+
+[local:vars]
+username=vagrant
+host=localhost
+requirements=local-requirements.txt
+settings=portfolio.settings.local
