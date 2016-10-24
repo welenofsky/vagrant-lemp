@@ -1,3 +1,12 @@
+[live]
+wellyonweb.com ansible_ssh_user=ubuntu
+
+[live:vars]
+username=ubuntu
+host=wellyonweb.com
+requirements=deploy-requirements.txt
+settings=portfolio.settings.production
+
 [local]
 localhost ansible_user=vagrant ansible_port=2222 ansible_host=127.0.0.1
 
