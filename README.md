@@ -6,11 +6,21 @@ Using the ansible deployments/provisioning script
 * Vagrant
 * ansible
 
+### For Mac
+```
+brew install postgresql
+```
+
+### For Ubuntu
+```
+sudo apt-get install libpq-dev
+```
+
 ## Setting Up Local Environment
 
 1. Get Vagrant
 
-2. pip install ansible
+2. pip install -r requirements.txt
 
 ```
 pip install ansible
