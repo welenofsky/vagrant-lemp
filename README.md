@@ -13,7 +13,7 @@ brew install postgresql
 
 ### For Ubuntu
 ```
-sudo apt-get install libpq-dev
+sudo apt-get install libpq-dev python-dev
 ```
 
 ## Setting Up Local Environment
