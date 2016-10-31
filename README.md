@@ -3,8 +3,10 @@ Using the ansible deployments/provisioning script
 
 ## Required Packages
 
+* python / pip
 * Vagrant
 * ansible
+* libpq-dev (Postgres dependency)
 
 ### For Mac
 ```
