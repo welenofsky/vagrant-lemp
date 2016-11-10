@@ -22,19 +22,24 @@ sudo apt-get install libpq-dev python-dev
 
 1. Get Vagrant
 
-2. pip install -r requirements.txt
+```
+vagrant up
+```
+Now you should have a development environment. If you need to manually profvision you can use or use ansible as shown below.
 
 ```
-pip install ansible
+vagrant provision
 ```
 
-3. Vagrant up
+
+## Deployment
+
+Local Deployment shown but production/staging deployment is the same but just specifying different playbooks and using the right limit flag and private key for your environment. 
 
 ```
-cd /path/to/folder && vagrant up
-```
-
-if vagrant up doesn't provision or if you want to manually provision you can call ansible-playbook manually like so
-```
+virtualenv env --python=python3
+source env/bin/activate
+pip install -r requirements.txt
 ansible-playbook -i ansible.inventory provision.ansible.yaml --limit=local --private-key=~/.vagrant.d/insecure_private_key
 ```
+Virtualenv suggested but not required
