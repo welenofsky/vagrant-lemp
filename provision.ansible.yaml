@@ -5,92 +5,14 @@
     - name: Upgrade cache and system (safe upgrade)
       apt: upgrade=safe update_cache=yes
 
-    - name: Make sure nginx git python pip and postgres are present
-      apt: pkg=nginx,git,python3,python3-pip,postgresql,postgresql-contrib state=present
+    - name: Install git/php5/mysql
+      apt: pkg=nginx,git,php5,php5-fpm,mysql-server state=present
 
     - name: Installing build-tools
-      apt: pkg=build-essential,autoconf,libtool,pkg-config,python-dev,python3-dev,libpq-dev,python-psycopg2
+      apt: pkg=build-essential,autoconf,libtool,pkg-config,libpq-dev
 
-    - name: Ensure postgresql is running
-      service: name=postgresql state=started enabled=true
-
-    - name: Create postgres database
-      become: true
-      become_user: postgres
-      postgresql_db:
-        name: portfolio
-
-    - name: Create database username
-      become: true
-      become_user: postgres
-      postgresql_user:
-          db: portfolio
-          name: admin
-          password: portfolio-pw
-          priv: ALL
-
-    - name: Make sure virtualenv is present
-      pip: name=virtualenv executable=pip3
-
-    - name: Allow long hostnames in nginx
-      lineinfile:
-        dest=/etc/nginx/nginx.conf
-        regexp='(\s+)#? ?server_names_hash_bucket_size'
-        backrefs=yes
-        line='\1server_names_hash_bucket_size 64;'
-
-    - name: Upload ssh key
-      copy: src=~/.ssh/wowinsecure dest=/home/{{ username }}/.ssh/id_rsa mode=0600 group={{ username }} owner={{ username }}
-
-    - name: Add SSH key
-      shell: 'eval "$(ssh-agent -s)" && ssh-add /home/{{ username }}/.ssh/id_rsa'
-
-    - name: Git pull main repo
-      git: repo=git@github.com:welenofsky/portfolio.git
-           dest=/{{ username }}/sites/{{ host }}/source/
-           accept_hostkey=True
-           key_file=/home/{{ username }}/.ssh/id_rsa
-           update=True
-      notify:
-        - restart gunicorn
-
-    - name: Git pull secrets
-      git: repo=git@github.com:welenofsky/portfolio-secrets.git
-           dest=/{{ username }}/sites/{{ host }}/secrets/
-           accept_hostkey=True
-           key_file=/home/{{ username }}/.ssh/id_rsa
-           update=True
-
-    - name: Taking control of secrets
-      shell: 'chown -R {{ username }}:{{ username }} /{{ username }}/sites/{{ host }}/secrets/'
-
-    - name: Create virtualenv if doesn't exist
-      shell: '[ -d virtualenv/ ] || virtualenv --python=python3 virtualenv/'
-      args:
-        chdir: /{{ username }}/sites/{{ host }}/
-
-    - name: Pip install requirements file
-      pip: requirements=/{{ username }}/sites/{{ host }}/source/portfolio/{{ requirements }}
-           virtualenv=/{{ username }}/sites/{{ host }}/virtualenv
-
-    - name: Update static files
-      shell: '../../virtualenv/bin/python3 manage.py collectstatic --noinput  --settings={{ settings }}'
-      args:
-        chdir: /{{ username }}/sites/{{ host }}/source/portfolio
-      notify:
-        - restart nginx
-        - restart gunicorn
-
-    - name: Assures database directory exists
-      file: path=/{{ username }}/sites/{{ host }}/database state=directory
-
-    - name: Apply db migrations
-      shell: '../../virtualenv/bin/python3 manage.py migrate --noinput --settings={{ settings }}'
-      args:
-        chdir: /{{ username }}/sites/{{ host }}/source/portfolio
-      notify:
-        - restart nginx
-        - restart gunicorn
+    - name: Ensure MySQL is running
+      service: name=mysql state=started enabled=true
 
     - name: Remove nginx default if exists
       shell: '[ ! -f default ] || rm default'
@@ -102,168 +24,24 @@
                 dest=/etc/nginx/sites-available/{{ host }}
       notify:
           - restart nginx
+          - restart php5fpm
 
     - name: Add symlink in nginx sites-enabled
       file: src=/etc/nginx/sites-available/{{ host }}
             dest=/etc/nginx/sites-enabled/{{ host }} state=link
       notify:
           - restart nginx
-
-    - name: Write gunicorn init script
-      template: src=./gunicorn-upstart.conf.j2
-                dest=/etc/init/gunicorn-{{ host }}.conf
-      notify:
-          - restart gunicorn
+          - restart php5fpm
 
     - name: Make sure nginx is running
       service: name=nginx state=running
 
-    - name: Make sure gunicorn is running
-      service: name=gunicorn-{{ host }} state=running
+    - name: Make sure php5-fpm is running
+      service: name=php5-fpm state=running
 
   handlers:
     - name: restart nginx
       service: name=nginx state=restarted
 
-    - name: restart gunicorn
-      service: name=gunicorn-{{ host }} state=restarted
-
-- hosts:
-  - staging
-  - live
-  become: true
-  tasks:
-    - name: Upgrade cache and system (safe upgrade)
-      apt: upgrade=safe update_cache=yes
-
-    - name: Make sure nginx git python pip and postgres are present
-      apt: pkg=nginx,git,python3,python3-pip,postgresql,postgresql-contrib state=present
-
-    - name: Installing build-tools
-      apt: pkg=build-essential,autoconf,libtool,pkg-config,python-dev,python3-dev,libpq-dev,python-psycopg2
-
-    - name: Install setfacl support
-      become: true
-      apt: pkg=acl
-
-    - name: Ensure postgresql is running
-      service: name=postgresql state=started enabled=true
-
-    - name: Create postgres database
-      become: true
-      become_user: postgres
-      postgresql_db:
-        name: portfolio
-
-    - name: Create database username
-      become: true
-      become_user: postgres
-      postgresql_user:
-          db: portfolio
-          name: admin
-          password: portfolio-pw
-          priv: ALL
-
-    - name: Make sure virtualenv is present
-      pip: name=virtualenv executable=pip3
-
-    - name: Allow long hostnames in nginx
-      lineinfile:
-        dest=/etc/nginx/nginx.conf
-        regexp='(\s+)#? ?server_names_hash_bucket_size'
-        backrefs=yes
-        line='\1server_names_hash_bucket_size 64;'
-
-    - name: Upload ssh key
-      copy: src=~/.ssh/wowinsecure dest=/home/{{ username }}/.ssh/id_rsa mode=0600 group={{ username }} owner={{ username }}
-
-    - name: Add SSH key
-      shell: 'eval "$(ssh-agent -s)" && ssh-add /home/{{ username }}/.ssh/id_rsa'
-
-    - name: Git pull main repo
-      git: repo=git@github.com:welenofsky/portfolio.git
-           dest=/home/{{ username }}/sites/{{ host }}/source/
-           accept_hostkey=True
-           key_file=/home/{{ username }}/.ssh/id_rsa
-           update=True
-      notify:
-        - restart gunicorn
-
-    - name: Git pull secrets
-      git: repo=git@github.com:welenofsky/portfolio-secrets.git
-           dest=/home/{{ username }}/sites/{{ host }}/secrets/
-           accept_hostkey=True
-           key_file=/home/{{ username }}/.ssh/id_rsa
-           update=True
-
-    - name: Taking control of secrets
-      shell: 'chown -R {{ username }}:{{ username }} /home/{{ username }}/sites/{{ host }}/secrets/'
-
-    - name: Create virtualenv if doesn't exist
-      shell: '[ -d virtualenv/ ] || virtualenv --python=python3 virtualenv/'
-      args:
-        chdir: /home/{{ username }}/sites/{{ host }}/
-
-    - name: Pip install requirements file
-      pip: requirements=/home/{{ username }}/sites/{{ host }}/source/portfolio/{{ requirements }}
-           virtualenv=/home/{{ username }}/sites/{{ host }}/virtualenv
-
-    - name: Update static files
-      shell: '../../virtualenv/bin/python3 manage.py collectstatic --noinput  --settings={{ settings }}'
-      args:
-        chdir: /home/{{ username }}/sites/{{ host }}/source/portfolio
-      notify:
-        - restart nginx
-        - restart gunicorn
-
-    - name: Assures database directory exists
-      file: path=/home/{{ username }}/sites/{{ host }}/database state=directory
-
-    - name: Make Migrations if necessary
-      shell: '../../virtualenv/bin/python3 manage.py makemigrations --noinput --settings={{ settings }}'
-      args:
-        chdir: /home/{{ username }}/sites/{{ host }}/source/portfolio
-
-    - name: Apply db migrations
-      shell: '../../virtualenv/bin/python3 manage.py migrate --noinput --settings={{ settings }}'
-      args:
-        chdir: /home/{{ username }}/sites/{{ host }}/source/portfolio
-      notify:
-        - restart nginx
-        - restart gunicorn
-
-    - name: Remove nginx default if exists
-      shell: '[ ! -f default ] || rm default'
-      args:
-        chdir: /etc/nginx/sites-available/
-
-    - name: Add nginx config to sites-available
-      template: src=./nginx.conf.j2
-                dest=/etc/nginx/sites-available/{{ host }}
-      notify:
-          - restart nginx
-
-    - name: Add symlink in nginx sites-enabled
-      file: src=/etc/nginx/sites-available/{{ host }}
-            dest=/etc/nginx/sites-enabled/{{ host }} state=link
-      notify:
-          - restart nginx
-
-    - name: Write gunicorn init script
-      template: src=./gunicorn-upstart.conf.j2
-                dest=/etc/init/gunicorn-{{ host }}.conf
-      notify:
-          - restart gunicorn
-
-    - name: Make sure nginx is running
-      service: name=nginx state=running
-
-    - name: Make sure gunicorn is running
-      service: name=gunicorn-{{ host }} state=running
-
-  handlers:
-    - name: restart nginx
-      service: name=nginx state=restarted
-
-    - name: restart gunicorn
-      service: name=gunicorn-{{ host }} state=restarted
+    - name: restart php5fpm
+      service: name=php5-fpm state=restarted
