@@ -9,10 +9,17 @@
       apt: pkg=nginx,git,php5,php5-fpm,mysql-server state=present
 
     - name: Installing build-tools
-      apt: pkg=build-essential,autoconf,libtool,pkg-config,libpq-dev
+      apt: pkg=build-essential,autoconf,libtool,pkg-config,libpq-dev,python-mysqldb
 
     - name: Ensure MySQL is running
       service: name=mysql state=started enabled=true
+
+    - name: Create a new database with name 'pipeline'
+      mysql_db:
+        name: pipeline
+        state: present
+      notify:
+          - restart mysql
 
     - name: Remove nginx default if exists
       shell: '[ ! -f default ] || rm default'
@@ -40,6 +47,9 @@
       service: name=php5-fpm state=running
 
   handlers:
+    - name: restart mysql
+      service: name=mysql state=restarted
+
     - name: restart nginx
       service: name=nginx state=restarted
 
