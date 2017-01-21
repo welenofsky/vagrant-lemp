@@ -7,12 +7,6 @@ server {
 
     server_name localhost;
 
-    location / {
-        try_files $uri $uri/ =404;
-        proxy_set_header Host $host:8080;
-        proxy_pass http://localhost:8000/;
-    }
-
     location ~ [^/]\.php(/|$) {
       fastcgi_split_path_info ^(.+?\.php)(/.*)$;
       if (!-f $document_root$fastcgi_script_name) {
@@ -22,7 +16,6 @@ server {
       # Mitigate https://httpoxy.org/ vulnerabilities
       fastcgi_param HTTP_PROXY "";
 
-      # fastcgi_pass 127.0.0.1:8000;
       fastcgi_pass unix:/var/run/php5-fpm.sock;
       fastcgi_index index.php;
       include fastcgi_params;
