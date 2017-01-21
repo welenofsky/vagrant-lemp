@@ -21,13 +21,11 @@ https://www.vagrantup.com/downloads.html
 ```
 virtualenv env/ --python=python2.7
 ```
-
 5. Install ansible from requirements file
 ```
 source env/bin/activate
 pip install -r requirements.txt
 ```
-
 6. Vagrant up
 ```
 vagrant up
