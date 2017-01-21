@@ -10,23 +10,25 @@ Using the ansible deployments/provisioning script
 
 ## Setting Up Local Environment
 
-1. Get Vagrant
+### Get Vagrant   
 https://www.vagrantup.com/downloads.html
 
-2. Have python2.7 on your computer
+### Have python2.7 on your computer
 
-3. clone this repo
+### clone this repo
 
-4. create a virtualenv
+### create a virtualenv
 ```
 virtualenv env/ --python=python2.7
 ```
-5. Install ansible from requirements file
+
+### Install ansible from requirements file
 ```
 source env/bin/activate
 pip install -r requirements.txt
 ```
-6. Vagrant up
+
+### Vagrant up
 ```
 vagrant up
 ```
@@ -34,5 +36,6 @@ Now you should have a development environment. If you need to manually profvisio
 ```
 vagrant provision
 ```
-7. Verify  
+
+### Verify  
 go to http://localhost:8080 to see the phpinfo()
